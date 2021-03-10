@@ -20,12 +20,12 @@ will not write about `Payfort` operations, what and how to use.
 
 You can install `Laravel Payfort` package to your laravel project via composer command:
 ```
-$ composer require wshurafa/laravel-payfort
+$ midoelhawy/laravel-payfort
 ```
 
 ## Configuration
 
-#####  For Laravel < 5.5 (Package Auto Discovery : Skip the following two step for laravel 5.5+ )
+#####  For Laravel > 7.0 
 
 After installing the `Laravel Payfort` library, register the `LaravelPayfort\Providers\PayfortServiceProvider` 
 in your `config/app.php` configuration file:
