@@ -14,8 +14,8 @@
     }
   ],
   "support": {
-    "issues": "https://github.com/wshurafa/laravel-payfort/issues",
-    "source": "https://github.com/wshurafa/laravel-payfort"
+    "issues": "https://github.com/midoelhawy/laravel-payfort/issues",
+    "source": "https://github.com/midoelhawy/laravel-payfort"
   },
   "type": "library",
   "license": "MIT",
