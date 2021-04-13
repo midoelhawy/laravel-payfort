@@ -1,17 +1,19 @@
 Laravel Payfort Package
 =======================
-[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md) [![laravel version](https://img.shields.io/static/v1?label=laravel&message=7.0&color=red&style=flat-square)](https://laravel.com/docs/7.x/releases)  [![lib version](https://img.shields.io/static/v1?label=payfort&message=1.01&color=orange&style=flat-square)](https://laravel.com/docs/7.x/releases)
 
 
 `Laravel Payfort` provides a simple and rich way to perform and handle operations for 
-`Payfort` (MEA based online payment gateway) check here to read more <a href="http://www.payfort.com/">Payfort</a>.  
+`Payfort` (MEA based online payment gateway) check here to read more [Payfort](http://www.payfort.com/).  
 This package supports a set of `Payfort` operations as listed below, other operations are open for future work and 
 contribution. 
-
 * AUTHORIZATION/PURCHASE
+* CAPTURE
 * TOKENIZATION
 * SDK_TOKEN
 * CHECK_STATUS
+* REFUND
+
 
 You have to read the `Payfort` documentation very well before proceeding in using any package, the package author 
 will not write about `Payfort` operations, what and how to use.
@@ -33,7 +35,6 @@ in your `config/app.php` configuration file:
 ```php
 'providers' => [
     // Other service providers...
-
     LaravelPayfort\Providers\PayfortServiceProvider::class,
 ],
 ```
@@ -50,14 +51,17 @@ $ php artisan vendor:publish --provider "LaravelPayfort\Providers\PayfortService
  This will create a new config file named `payfort.php` in `config` folder. Then you have to add the following 
  constants in the `.env` file, you can find most of these values in your `Payfort` account. 
  ```
-PAYFORT_USE_SANDBOX=true                      # Defines wether to activate the payfort sandbox enviroment or not.
-PAYFORT_MERCHANT_IDENTIFIER=s2b3rj1vrjrhc1x   # The payfort merchant account identifier
-PAYFORT_ACCESS_CODE=s31bpM1ebfNnwqo           # The payfort account access code
-PAYFORT_SHA_TYPE=sha256                       # The payfort account sha type. sha256/sha512
-PAYFORT_SHA_REQUEST_PHRASE=keljhgiergh        # The payfort account sha request phrase
-PAYFORT_SHA_RESPONSE_PHRASE=lkejgoegj         # The payfort account sha response phrase
-PAYFORT_CURRENCY=USD                          # The default currency for you app. Currency ISO code 3.
-PAYFORT_RETURN_URL=/payfort/handle            # The url to return after submitting payfort forms.
+PAYFORT_USE_SANDBOX=true                    #Defines wether to activate the payfort sandbox env or not.
+PAYFORT_USE_TEST_ENV=true                   #Define Test env mode for development
+PAYFORT_MERCHANT_IDENTIFIER=51e316554       # The payfort merchant account identifier
+PAYFORT_ACCESS_CODE=XwMv28sHSAkSaB71uGON    # The payfort account access code
+PAYFORT_SHA_TYPE=sha256                     # The payfort account sha type. sha256/sha512
+PAYFORT_SHA_REQUEST_PHRASE=58obfoddsfg..    # The payfort account sha request phrase
+PAYFORT_SHA_RESPONSE_PHRASE=86md5f56s..     # The payfort account sha response phrase
+PAYFORT_CURRENCY=SAR                        # The default currency for you app. Currency ISO code 3.
+PAYFORT_LANGUAGE=EN                         # The system default langauge for response messages
+PAYFORT_RETURN_URL=/payfort/response        # The url to return after submitting payfort forms.
+
  ```
  
 ## Basic Usage
@@ -72,15 +76,20 @@ To display payfort authorization or purchase page, in your controller's method a
 ```php
 return Payfort::redirection()->displayRedirectionPage([
     'command' => 'AUTHORIZATION',              # AUTHORIZATION/PURCHASE according to your operation.
-    'merchant_reference' => 'ORDR.34562134',   # You reference id for this operation (Order id for example).
-    'amount' => 100,                           # The operation amount.
-    'currency' => 'QAR',                       # Optional if you need to use another currenct than set in config.
-    'customer_email' => 'example@example.com'  # Customer email.
-]); 
+    'merchant_reference' => 'ORDR.'.rand(10000,100000),   
+    'amount' => 3501.35,                           
+    'currency' => 'SAR',                      
+    'customer_email' => 'example@example.com',  
+    'payment_option' => 'VISA', //Mada and others types 
+    "language"=>'ar'
+]);
 ```
+
+> **⚠ Note**  
+> Mada payment method works only as PURCHASE (not as AUTHORIZATION).
+
 Other optional parameters that can be passed to `displayRedirectionPage` method as follows:
 * token_name
-* payment_option
 * sadad_olp
 * eci
 * order_description
@@ -93,6 +102,12 @@ Other optional parameters that can be passed to `displayRedirectionPage` method 
 
 `Payfort` page will be displayed and once user submits the payment form, the return url defined in the environment 
 configurations will be called.
+
+![GitHub Logo](https://i.stack.imgur.com/S8NZW.png)
+
+
+
+
 
 See [`Payfort` documentation](https://docs.payfort.com/docs/redirection/build/index.html#authorization-purchase-request) for more info.
 
@@ -108,6 +123,20 @@ return Payfort::redirection()->displayTokenizationPage([
 `Payfort` page will be displayed and once user submits the payment form, the return url defined in the config file 
 will be called.
 
+
+### Capture Payment
+
+To Capture after callback AUTHORIZATION, in your controller's method add the following code snippet:
+```php
+$checkpayfort->captureOperationByFortId(
+                [
+                    "fort_id"=>$payfort_return["fort_id"],
+                    "merchant_reference"=>$payfort_return["merchant_reference"],
+                    "amount"=>3501.35,//your amount to capture (max : the authraized amount)
+                    "currency"=>"SAR",
+                ]
+);
+```
 See [`Payfort` documentation](https://docs.payfort.com/docs/other-payfort-services/build/index.html#fort-tokenization-service) for more info.
 
 ### Handling Payfort Authorization/Purchase response
@@ -123,8 +152,29 @@ class PayfortOrdersController extends Controller{
     
     public function processReturn(Request $request){
         $payfort_return = $this->handlePayfortCallback($request);
-        # Here you can process the response and make your decision.
-        # The response structure is as described in payfort documentation
+        $checkpayfort =new PayfortAPI(config('payfort'));
+        $checkStatus = $checkpayfort->checkOrderStatusByFortId($payfort_return["fort_id"]);
+        if($checkStatus->isSuccess()){
+            return $checkStatus->getResponse();//return payfort json array 
+        }
+        
+        if($payfort_return["command"] == "AUTHORIZATION"){
+            $captureAuthorizaPymnt = $checkpayfort->captureOperationByFortId(
+                [
+                    "fort_id"=>$payfort_return["fort_id"],
+                    "merchant_reference"=>$payfort_return["merchant_reference"],
+                    "amount"=>3501.35,//your amount to capture (max : the authraized amount)
+                    "currency"=>"SAR",
+                ]
+            );
+            
+            if($captureAuthorizaPymnt->isSuccess()){
+                //success payment
+            }
+            //....
+            
+        }
+        
     }
 }
 ```
@@ -148,3 +198,8 @@ Write clear comments and description ;-).
  
 `Laravel Payfort` is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT)
 # laravel-payfort
+
+This Library implemented on :
+- [wshurafa](https://github.com/wshurafa/laravel-payfort)
+- [roaatech](https://github.com/roaatech/payfort-php)
+

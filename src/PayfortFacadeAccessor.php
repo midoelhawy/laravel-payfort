@@ -2,7 +2,7 @@
 
 namespace LaravelPayfort;
 
-
+use Illuminate\Support\Facades\Log;
 use LaravelPayfort\Services\PayfortAPI;
 use LaravelPayfort\Services\PayfortRedirection;
 
@@ -28,6 +28,7 @@ class PayfortFacadeAccessor
      */
     public static function redirection($extra_config = [])
     {
+        //Log::info(config('payfort'));
         $config = array_merge(config('payfort'), $extra_config);
         return new PayfortRedirection($config);
     }

@@ -20,12 +20,14 @@ class PayfortRedirection extends Payfort
         # Call parent constructor to initialize common settings
         parent::__construct($config);
 
-        $this->payfortEndpoint = 'https://checkout.payfort.com/FortAPI/paymentPage';
-
-        # Check if it is sandbox environment to make requests to Payfort sandbox url.
-        if (data_get($this->config, 'sandbox', false)) {
+        $isTest = env("PAYFORT_USE_TEST_ENV", false);
+        if($isTest){
             $this->payfortEndpoint = 'https://sbcheckout.payfort.com/FortAPI/paymentPage';
+        }else{
+            $this->payfortEndpoint = 'https://checkout.payfort.com/FortAPI/paymentPage';
         }
+
+
 
         $this->config['return_url'] = url($this->config['return_url']);
     }

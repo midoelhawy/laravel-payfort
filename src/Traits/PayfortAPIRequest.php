@@ -2,6 +2,7 @@
 
 namespace LaravelPayfort\Traits;
 
+use LaravelPayfort\AmountDecimals;
 use LaravelPayfort\Exceptions\PayfortException;
 use LaravelPayfort\Exceptions\PayfortRequestException;
 
@@ -65,12 +66,37 @@ trait PayfortAPIRequest
      */
     public function checkOrderStatusByFortId($fortId)
     {
+        //return $this->payfortEndpoint;
         $response = $this->checkOrderStatus([
             'fort_id' => $fortId
         ]);
 
         return $response;
     }
+
+    /**
+     * Make Payfort check status request & return response.
+     *
+     * @see https://docs.payfort.com/docs/in-common/build/index.html#check-status
+     *
+     * @param int $fortId The Payfort reference to check for its transactions status
+     * @return \stdClass
+     *
+     * @throws \LaravelPayfort\Exceptions\PayfortRequestException
+     */
+    public function captureOperationByFortId($data)//$fortId,$merchant_reference,$authorized_amount
+    {
+
+        $data = array_merge($data,[
+            "currency"=>$this->config['currency'],
+            "language"=>$this->config['language'],
+        ]);
+
+        $data["amount"] = AmountDecimals::forRequest($data["amount"],$data["currency"]);
+        $response = $this->captureOperation($data);
+        return $response;
+    }
+
 
     /**
      * Make Payfort check status request & return response.
@@ -88,6 +114,64 @@ trait PayfortAPIRequest
             'merchant_reference' => $merchant_reference
         ]);
     }
+
+
+    /**
+     * Cupter Operation
+     *
+     * @see https://paymentservices-reference.payfort.com/docs/api/build/index.html#capture-operation
+     *
+     * @param array $data The request parameters for check status request
+     * @return \stdClass
+     *
+     * @throws \LaravelPayfort\Exceptions\PayfortRequestException
+     */
+    public function refoundTransaction($data)
+    {
+
+        $data = array_merge($data,[
+            "currency"=>$this->config['currency'],
+            "language"=>$this->config['language'],
+        ]);
+
+        $data["amount"] = AmountDecimals::forRequest($data["amount"],$data["currency"]);
+
+        $data = array_merge($data, [
+            'command' => 'REFUND',
+            'access_code' => $this->config['access_code'],
+            'merchant_identifier' => $this->config['merchant_identifier'],
+            'language' => $this->config['language'],
+        ]);
+        //return  $data;
+        $response = $this->callPayfortAPI($data);
+
+        return new \LaravelPayfort\operationsControl\Refound($response);
+    }
+
+    /**
+     * Refound Transaction
+     *
+     * @see https://paymentservices-reference.payfort.com/docs/api/build/index.html?php#refund-operation
+     *
+     * @param array $data The request parameters for check status request
+     * @return \stdClass
+     *
+     * @throws \LaravelPayfort\Exceptions\PayfortRequestException
+     */
+    private function captureOperation($data)
+    {
+        $data = array_merge($data, [
+            'command' => 'CAPTURE',
+            'access_code' => $this->config['access_code'],
+            'merchant_identifier' => $this->config['merchant_identifier'],
+            'language' => $this->config['language'],
+        ]);
+        //return  $data;
+        $response = $this->callPayfortAPI($data);
+
+        return new \LaravelPayfort\operationsControl\Capture($response);
+    }
+
 
     /**
      * Make Payfort check status request & return response.
@@ -110,25 +194,36 @@ trait PayfortAPIRequest
 
         $response = $this->callPayfortAPI($data);
 
+        return new \LaravelPayfort\operationsControl\OrderStatus($response);
         /*
          * According to payfort documentation
          * 12 refers to Check Status success.
          * @see https://docs.payfort.com/docs/in-common/build/index.html#statuses
          */
-        if ($response->status != '12') {
-            throw new PayfortRequestException($response->response_message);
+        /* if ($response->status != '12') {
+            return false;
         }
 
-        /*
-        * According to payfort documentation
-        * 12  refers to Check Status success.
-        * 000 refers to success message
-        * @see https://docs.payfort.com/docs/in-common/build/index.html#statuses
-        */
-        if ($response->response_code != '12000') {
-            throw new PayfortRequestException($response->response_message);
-        }
+
+
+
+        return $this->prepareStatus($response); */
     }
+
+
+
+    public function prepareStatus($response)
+    {
+        if ($response->transaction_status == "14") {
+            $response->purchase_success = true;
+        }else{
+            $response->purchase_success = false;
+        }
+
+        return $response;
+
+    }
+
 
 
     /**
@@ -139,20 +234,27 @@ trait PayfortAPIRequest
      *
      * @throws \LaravelPayfort\Exceptions\PayfortException
      */
-    private function callPayfortAPI($data)
+    private function callPayfortAPI($data,$is_test=false)
     {
         # Add payfort request signature to request data
         $data['signature'] = $this->calcPayfortSignature($data, 'request');
-
+        if ($is_test) {
+            return $data;
+        }
         try {
             # Make http request
             $rawResponse = $this->httpClient->post($this->payfortEndpoint, [
                 'json' => $data
-            ])->getBody();
+            ]);
+
+
+
+            $rawResponse = $rawResponse->getBody();
 
             $response = json_decode($rawResponse);
 
             if (data_get($response, 'status') == '00') {
+                return $response;
                 throw new PayfortException(data_get($response, 'response_message'));
             }
 

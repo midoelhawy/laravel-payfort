@@ -23,7 +23,8 @@ trait PayfortRedirectRequest
             'merchant_identifier' => $this->config['merchant_identifier'],
             'merchant_reference' => $data['merchant_reference'],
             'language' => $this->config['language'],
-            'return_url' => $this->config['return_url']
+            'return_url' => $this->config['return_url'],
+            'currency' => "SAR",
         ];
 
         return $this->displayPayfortPage($requestParams);

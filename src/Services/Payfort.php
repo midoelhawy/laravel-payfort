@@ -42,7 +42,7 @@ abstract class Payfort
         $this->config = $config;
 
         if (!isset($config['language'])) {
-            $this->config['language'] = app()->getLocale() == 'ar' ? 'ar' : 'en';
+            $this->config['language'] = app()->getLocale() == 'en' ? 'en' : 'ar';
         }
     }
 

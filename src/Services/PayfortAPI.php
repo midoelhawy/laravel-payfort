@@ -30,11 +30,12 @@ class PayfortAPI extends Payfort
 
         $this->payfortEndpoint = 'https://paymentservices.payfort.com/FortAPI/paymentApi';
 
-        # Check if it is sandbox environment to make requests to Payfort sandbox url.
-        if (data_get($this->config, 'sandbox', false)) {
+
+
+        $isTest = env("PAYFORT_USE_TEST_ENV", false);
+        if($isTest){
             $this->payfortEndpoint = 'https://sbpaymentservices.payfort.com/FortAPI/paymentApi';
         }
-
         # Setting Http Client
         $this->httpClient = new Client([
             'curl' => [
