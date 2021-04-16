@@ -17,13 +17,14 @@ trait PayfortRedirectRequest
     public function displayTokenizationPage($data)
     {
         # Prepare redirection page request parameters
+        $redirectUrl = isset($data["return_url"]) ? $data["return_url"] : $this->config['return_url'];
         $requestParams = [
             'service_command' => 'TOKENIZATION',
             'access_code' => $this->config['access_code'],
             'merchant_identifier' => $this->config['merchant_identifier'],
             'merchant_reference' => $data['merchant_reference'],
             'language' => $this->config['language'],
-            'return_url' => $this->config['return_url'],
+            'return_url' => $redirectUrl,
             'currency' => "SAR",
         ];
 
@@ -41,6 +42,7 @@ trait PayfortRedirectRequest
     public function displayRedirectionPage($data)
     {
         # Prepare redirection page request parameters
+        $redirectUrl = isset($data["return_url"]) ? $data["return_url"] : $this->config['return_url'];
         $requestParams = [
             'command' => data_get($data, 'command', 'AUTHORIZATION'),
             'access_code' => $this->config['access_code'],
@@ -50,7 +52,7 @@ trait PayfortRedirectRequest
             'currency' => data_get($data, 'currency', $this->config['currency']),
             'language' => $this->config['language'],
             'customer_email' => $data['customer_email'],
-            'return_url' => $this->config['return_url']
+            'return_url' => $redirectUrl
         ];
 
         # Redirection page request optional parameters

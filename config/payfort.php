@@ -1,5 +1,6 @@
 <?php
 return [
+    'use_test_env' => env('PAYFORT_USE_TEST_ENV', false),
     'sandbox' => env('PAYFORT_USE_SANDBOX', false),
     'merchant_identifier' => env('PAYFORT_MERCHANT_IDENTIFIER'),
     'access_code' => env('PAYFORT_ACCESS_CODE'),

@@ -81,7 +81,8 @@ return Payfort::redirection()->displayRedirectionPage([
     'currency' => 'SAR',                      
     'customer_email' => 'example@example.com',  
     'payment_option' => 'VISA', //Mada and others types 
-    "language"=>'ar'
+    "language"=>'ar',
+    'return_url'=>"https://expm.com/response"
 ]);
 ```
 
