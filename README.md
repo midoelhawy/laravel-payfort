@@ -1,6 +1,6 @@
 Laravel Payfort Package
 =======================
-[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md) [![laravel version](https://img.shields.io/static/v1?label=laravel&message=7.0&color=red&style=flat-square)](https://laravel.com/docs/7.x/releases)  [![lib version](https://img.shields.io/static/v1?label=payfort&message=1.01&color=orange&style=flat-square)](https://laravel.com/docs/7.x/releases)
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md) [![laravel version](https://img.shields.io/static/v1?label=laravel&message=7.0&color=red&style=flat-square)](https://laravel.com/docs/7.x/releases)  [![lib version](https://img.shields.io/static/v1?label=payfort&message=2.0.0&color=orange&style=flat-square)](https://laravel.com/docs/7.x/releases)
 
 
 `Laravel Payfort` provides a simple and rich way to perform and handle operations for 
